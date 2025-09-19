@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bengaluru House Price Predictor</title>
+    <link rel="icon"
+        href="https://static.vecteezy.com/system/resources/previews/010/151/123/original/house-symbol-and-home-icon-sign-design-free-png.png"
+        type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #c3ecf7, #e0c3fc);
+            animation: gradientShift 5s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .radio-btn-group input[type="radio"] {
+            display: none;
+        }
+
+        .radio-btn-group label {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .radio-btn-group input[type="radio"]:checked+label {
+            background-color: #6366f1;
+            color: white;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-6">
+
+    <div class="w-full max-w-3xl glass-card p-8 space-y-6">
+        <header class="text-center">
+            <h1 class="text-4xl font-bold text-gray-800">🏠 Bengaluru House Price Predictor</h1>
+            <p class="text-gray-600 mt-2">Enter the details below to estimate your home's value</p>
+        </header>
+
+        <form id="prediction-form" class="space-y-6">
+            <div>
+                <label for="total_sqft" class="block text-lg font-semibold text-gray-700">Area (sq ft)</label>
+                <input type="number" id="total_sqft" name="total_sqft"
+                    class="w-full mt-2 p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., 1200" required />
+            </div>
+
+            <div>
+                <label class="block text-lg font-semibold text-gray-700">BHK</label>
+                <div id="bhk-options" class="radio-btn-group grid grid-cols-5 gap-3 mt-2"></div>
+            </div>
+
+            <div>
+                <label class="block text-lg font-semibold text-gray-700">Bathrooms</label>
+                <div id="bath-options" class="radio-btn-group grid grid-cols-5 gap-3 mt-2"></div>
+            </div>
+
+            <div>
+                <label for="location" class="block text-lg font-semibold text-gray-700">Location</label>
+                <select id="location" name="location"
+                    class="w-full mt-2 p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500"
+                    required>
+                    <option value="" disabled selected>Select a location</option>
+                    {% for location in locations %}
+                    <option value="{{ location }}">{{ location.title() }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit"
+                class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-transform transform hover:scale-105">
+                Predict Price
+            </button>
+        </form>
+
+        <div id="result" class="text-center text-2xl font-bold text-gray-800 pt-4"></div>
+    </div>
+
+    <script>
+        function createRadioButtons(containerId, groupName, maxNumber) {
+            const container = document.getElementById(containerId);
+            for (let i = 1; i <= maxNumber; i++) {
+                const div = document.createElement('div');
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.id = `${groupName}${i}`;
+                input.name = groupName;
+                input.value = i;
+                if (i === 2) input.checked = true;
+
+                const label = document.createElement('label');
+                label.htmlFor = input.id;
+                label.textContent = i;
+                label.className = 'block text-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-indigo-100';
+
+                div.appendChild(input);
+                div.appendChild(label);
+                container.appendChild(div);
+            }
+        }
+
+        document.getElementById('prediction-form').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Estimating...';
+
+            const formData = new FormData(this);
+            try {
+                const response = await fetch('/predict_home_price', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.estimated_price) {
+                    resultDiv.innerHTML = `Estimated Price: <span class="text-indigo-600">₹ ${data.estimated_price} Lakhs</span>`;
+                } else {
+                    resultDiv.innerHTML = `<span class="text-red-500">Error: ${data.error || 'Prediction failed'}</span>`;
+                }
+            } catch (error) {
+                console.error('Error during prediction:', error);
+                resultDiv.innerHTML = `<span class="text-red-500">An error occurred. Please try again.</span>`;
+            }
+        });
+
+        window.onload = function () {
+            createRadioButtons('bhk-options', 'bhk', 5);
+            createRadioButtons('bath-options', 'bath', 5);
+        };
+    </script>
+</body>
+
+</html>
