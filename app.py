@@ -171,9 +171,5 @@ if __name__ == '__main__':
     print("Starting Python Flask Server For Home Price Prediction...")
     app.run(debug=True)
 
-# For Vercel deployment - this is the correct way to expose the Flask app
-def handler(request):
-    """
-    Vercel serverless function handler
-    """
-    return app(request.environ, request.start_response)
+# For Vercel deployment
+app = app
